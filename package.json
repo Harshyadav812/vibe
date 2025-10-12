@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@e2b/cli": "^2.2.9",
+    "@e2b/code-interpreter": "^2.0.1",
     "@inngest/agent-kit": "^0.13.1",
     "@prisma/client": "^6.17.0",
     "@radix-ui/react-slot": "^1.2.3",
