@@ -14,7 +14,7 @@ enum MessageRole {
 }
 
 enum MessageType {
-  RESUTL
+  RESULT
   ERROR
 }
 

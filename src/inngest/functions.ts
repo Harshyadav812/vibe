@@ -181,7 +181,7 @@ export const codeAgentFunction = inngest.createFunction(
         data: {
           content: result.state.data.summary,
           role: "ASSISTANT",
-          type: "RESUTL",
+          type: "RESULT",
           fragment: {
             create: {
               sandboxUrl: sandboxUrl,
