@@ -14,6 +14,7 @@ import { useTRPC } from "@/trpc/client"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { PROJECT_TEMPLATES } from "../../constants"
+import { useClerk } from "@clerk/nextjs"
 
 
 const formSchema = z.object({
@@ -25,6 +26,8 @@ const formSchema = z.object({
 export const ProjectForm = () => {
 
   const [isFocused, setIsFocused] = useState(false)
+
+  const clerk = useClerk()
 
   const router = useRouter()
   const trpc = useTRPC()
@@ -45,8 +48,12 @@ export const ProjectForm = () => {
       //Todo: Invalidate usage status
     },
     onError: (error) => {
-      //TODO: Redirect to pricing page if specific error
       toast.error(error.message)
+
+      if (error.data?.code === "UNAUTHORIZED") {
+        clerk.openSignIn()
+      }
+      //TODO: Redirect to pricing page if specific error
     }
   }))
 
