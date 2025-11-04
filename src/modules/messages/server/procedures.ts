@@ -3,6 +3,7 @@ import { inngest } from "@/inngest/client";
 import { prisma } from "@/lib/db";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
+import { consumeCredits } from "@/lib/usage";
 
 export const messagesRouter = createTRPCRouter({
   getMany: protectedProcedure
@@ -55,6 +56,25 @@ export const messagesRouter = createTRPCRouter({
           message: "Project not found or you don't have access to it",
         });
       }
+
+      try {
+        await consumeCredits();
+      } catch (error) {
+        if (error instanceof Error) {
+          //throw this error if something else goes wrong
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Something went wrong",
+          });
+        } else {
+          // throw this error if rate limit is exhausted
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: "You have run out of credits",
+          });
+        }
+      }
+
       const createdMessage = await prisma.message.create({
         data: {
           projectId: existingProject.id,
