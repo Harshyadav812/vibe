@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import TextareaAutosize from 'react-textarea-autosize'
-import { ArrowUpIcon, Loader2Icon, Router } from "lucide-react"
+import { ArrowUpIcon, Loader2Icon } from "lucide-react"
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
@@ -39,7 +39,7 @@ export const MessageForm = ({ projectId }: Props) => {
   })
 
   const createMessage = useMutation(trpc.messages.create.mutationOptions({
-    onSuccess: (data) => {
+    onSuccess: () => {
       form.reset()
       queryClient.invalidateQueries(
         trpc.messages.getMany.queryOptions({ projectId })
