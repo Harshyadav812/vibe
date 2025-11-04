@@ -26,7 +26,7 @@ export const codeAgentFunction = inngest.createFunction(
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       const sandbox = await Sandbox.create("vibe-nextjs-harsh-812");
-      sandbox.setTimeout(900000);
+      await sandbox.setTimeout(60_000 * 10 * 3);
       return sandbox.sandboxId;
     });
 
@@ -42,6 +42,7 @@ export const codeAgentFunction = inngest.createFunction(
           orderBy: {
             createdAt: "desc", //TODO: make it 'asc' if AI don't understand which one is the last msg
           },
+          take: 10,
         });
 
         for (const message of messages) {
@@ -52,7 +53,7 @@ export const codeAgentFunction = inngest.createFunction(
           });
         }
 
-        return formattedMessages;
+        return formattedMessages.reverse();
       }
     );
 
