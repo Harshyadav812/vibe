@@ -10,8 +10,9 @@ import {
   ResizablePanel,
   ResizablePanelGroup
 } from "@/components/ui/resizable"
-import { MessagesContainer } from "../components/messages-container";
-import { ProjectHeader } from "../components/project-header";
+
+import { MessageContainerSkeleton, MessagesContainer } from "../components/messages-container";
+import { ProjectHeader, ProjectHeaderSkeleton } from "../components/project-header";
 import { FragmentWeb } from "../components/fragment-web";
 import { CodeIcon, CrownIcon, EyeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,13 +44,13 @@ export const ProjectView = ({ projectId }: Props) => {
           className="flex flex-col min-h-0"
         >
           <ErrorBoundary fallback={<p>Project header error!</p>}>
-            <Suspense fallback={<p>Loading...</p>}>
+            <Suspense fallback={<ProjectHeaderSkeleton />}>
               <ProjectHeader projectId={projectId} />
             </Suspense>
           </ErrorBoundary>
 
           <ErrorBoundary fallback={<p>Messages container error</p>}>
-            <Suspense fallback={<p>Project Loading...</p>}>
+            <Suspense fallback={<MessageContainerSkeleton />}>
               <MessagesContainer
                 projectId={projectId}
                 activeFragment={activeFragment}
@@ -110,3 +111,50 @@ export const ProjectView = ({ projectId }: Props) => {
     </div>
   )
 };
+
+export const ProjectViewSkeleton = () => {
+  return (
+    <div className="h-screen">
+      <ResizablePanelGroup direction='horizontal'>
+        <ResizablePanel
+          defaultSize={35}
+          minSize={20}
+          className="flex flex-col min-h-0"
+        >
+          <ProjectHeaderSkeleton />
+          <MessageContainerSkeleton />
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        <ResizablePanel
+          defaultSize={65}
+          minSize={50}
+        >
+          <div className="h-full flex flex-col">
+            {/* Tab header skeleton */}
+            <div className="w-full flex items-center p-2 border-b gap-x-2">
+              <div className="h-8 w-40 bg-muted animate-pulse rounded-md" />
+
+              <div className="ml-auto flex items-center gap-x-2">
+                <div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
+                <div className="size-8 rounded-full bg-muted animate-pulse" />
+              </div>
+            </div>
+
+            {/* Preview/Code content skeleton */}
+            <div className="flex-1 p-4 space-y-3">
+              <div className="h-6 bg-muted animate-pulse rounded w-1/3" />
+              <div className="h-4 bg-muted animate-pulse rounded w-full" />
+              <div className="h-4 bg-muted animate-pulse rounded w-5/6" />
+              <div className="h-4 bg-muted animate-pulse rounded w-4/6" />
+              <div className="h-32 bg-muted animate-pulse rounded-lg mt-4" />
+              <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+              <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+            </div>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+  )
+}

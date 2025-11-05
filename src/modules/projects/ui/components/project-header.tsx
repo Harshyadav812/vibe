@@ -80,3 +80,23 @@ export const ProjectHeader = ({ projectId }: Props) => {
     </header>
   )
 }
+
+export const ProjectHeaderSkeleton = () => {
+  return (
+    <header className="p-2 flex justify-between items-center border-b">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant={"ghost"}
+            size={"sm"}
+            className="focus-visible:ring-0 hover:bg-transparent hover:opacity-75 transition-opacity pl-2!"
+          >
+            <div className="size-[18px] rounded bg-muted animate-pulse" />
+            <span className="text-sm font-medium h-4 w-20 bg-muted animate-pulse rounded" />
+            <ChevronDownIcon className="opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+      </DropdownMenu>
+    </header>
+  )
+}
