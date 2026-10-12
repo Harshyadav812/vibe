@@ -21,8 +21,29 @@ interface AgentState {
 }
 
 export const codeAgentFunction = inngest.createFunction(
-  { id: "code-agent", triggers: [{ event: "code-agent/run" }] },
+  {
+    id: "code-agent",
+    triggers: [{ event: "code-agent/run" }],
+    onFailure: async ({ event, step }) => {
+      await step.run("save-failure-message", async () => {
+        const projectId = event.data.event.data.projectId;
+        if (projectId) {
+          await prisma.message.create({
+            data: {
+              projectId,
+              content:
+                "Something went wrong after multiple attempts. Please try again.",
+              role: "ASSISTANT",
+              type: "ERROR",
+            },
+          });
+        }
+      });
+    },
+  },
   async ({ event, step }) => {
+    const projectId: string = event.data.projectId;
+    try {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       const sandbox = await Sandbox.create("vibe-nextjs-harsh-812");
       await sandbox.setTimeout(60_000 * 10 * 3);
@@ -201,14 +222,14 @@ export const codeAgentFunction = inngest.createFunction(
       name: "fragment-title-generator",
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
-      model: gemini({ model: "gemini-3.8-flash" }),
+      model: gemini({ model: "gemini-3.5-flash-lite" }),
     });
 
     const responseGenerator = createAgent({
       name: "response-generator",
       description: "A response generator",
       system: RESPONSE_PROMPT,
-      model: gemini({ model: "gemini-3.8-flash-lite" }),
+      model: gemini({ model: "gemini-3.5-flash-lite" }),
     });
 
     const { output: fragmentTitleOutput } = await fragmentTitleGenerator.run(
@@ -287,5 +308,22 @@ export const codeAgentFunction = inngest.createFunction(
       files: result.state.data.files,
       summary: result.state.data.summary,
     };
+    } catch (error) {
+      console.error("Code agent function failed:", error);
+
+      // Write an error message to the DB so the frontend stops showing "Generating..."
+      await step.run("save-error-on-crash", async () => {
+        await prisma.message.create({
+          data: {
+            projectId,
+            content: "Something went wrong. Please try again.",
+            role: "ASSISTANT",
+            type: "ERROR",
+          },
+        });
+      });
+
+      throw error; // Re-throw so Inngest marks the function as failed
+    }
   },
 );
