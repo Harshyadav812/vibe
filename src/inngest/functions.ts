@@ -71,7 +71,7 @@ export const codeAgentFunction = inngest.createFunction(
       name: "code-agent",
       description: "An expert coding agent",
       system: PROMPT,
-      model: gemini({ model: "gemini-2.5-flash" }),
+      model: gemini({ model: "gemini-3.8-flash" }),
       tools: [
         createTool({
           name: "terminal",
@@ -202,14 +202,14 @@ export const codeAgentFunction = inngest.createFunction(
       name: "fragment-title-generator",
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
-      model: gemini({ model: "gemini-2.5-flash-lite" }),
+      model: gemini({ model: "gemini-3.8-flash" }),
     });
 
     const responseGenerator = createAgent({
       name: "response-generator",
       description: "A response generator",
       system: RESPONSE_PROMPT,
-      model: gemini({ model: "gemini-2.5-flash-lite" }),
+      model: gemini({ model: "gemini-3.8-flash-lite" }),
     });
 
     const { output: fragmentTitleOutput } = await fragmentTitleGenerator.run(
