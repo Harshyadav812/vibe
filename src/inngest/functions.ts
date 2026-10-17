@@ -15,6 +15,33 @@ import z from "zod";
 import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompt";
 import { prisma } from "@/lib/db";
 
+// agent-kit's gemini adapter only reads GEMINI_API_KEY by default; the project
+// documents GOOGLE_GENERATIVE_AI_API_KEY, so pass the key explicitly.
+const geminiApiKey =
+  process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
+// Gemini 3 rejects replayed tool calls that lack a thoughtSignature, but
+// agent-kit's gemini adapter drops signatures when parsing responses. Google
+// documents this dummy signature for history that can't carry the real one.
+// https://ai.google.dev/gemini-api/docs/thought-signatures
+const geminiModel = (options: Parameters<typeof gemini>[0]) => {
+  const model = gemini({ apiKey: geminiApiKey, ...options });
+  const originalOnCall = model.onCall;
+  model.onCall = (modelCopy, body) => {
+    originalOnCall?.(modelCopy, body);
+    for (const content of body.contents ?? []) {
+      for (const part of content.parts ?? []) {
+        if ("functionCall" in part && !("thoughtSignature" in part)) {
+          Object.assign(part, {
+            thoughtSignature: "skip_thought_signature_validator",
+          });
+        }
+      }
+    }
+  };
+  return model;
+};
+
 interface AgentState {
   summary: string;
   files: { [path: string]: string };
@@ -44,6 +71,12 @@ export const codeAgentFunction = inngest.createFunction(
   async ({ event, step }) => {
     const projectId: string = event.data.projectId;
     try {
+    if (!geminiApiKey) {
+      throw new Error(
+        "Missing Gemini API key: set GEMINI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY",
+      );
+    }
+
     const sandboxId = await step.run("get-sandbox-id", async () => {
       const sandbox = await Sandbox.create("vibe-nextjs-harsh-812");
       await sandbox.setTimeout(60_000 * 10 * 3);
@@ -91,7 +124,14 @@ export const codeAgentFunction = inngest.createFunction(
       name: "code-agent",
       description: "An expert coding agent",
       system: PROMPT,
-      model: gemini({ model: "gemini-3.8-flash" }),
+      model: geminiModel({
+        model: "gemini-3.8-flash",
+        defaultParameters: {
+          generationConfig: {
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        },
+      }),
       tools: [
         createTool({
           name: "terminal",
@@ -222,14 +262,28 @@ export const codeAgentFunction = inngest.createFunction(
       name: "fragment-title-generator",
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
-      model: gemini({ model: "gemini-3.5-flash-lite" }),
+      model: geminiModel({
+        model: "gemini-3.5-flash-lite",
+        defaultParameters: {
+          generationConfig: {
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        },
+      }),
     });
 
     const responseGenerator = createAgent({
       name: "response-generator",
       description: "A response generator",
       system: RESPONSE_PROMPT,
-      model: gemini({ model: "gemini-3.5-flash-lite" }),
+      model: geminiModel({
+        model: "gemini-3.5-flash-lite",
+        defaultParameters: {
+          generationConfig: {
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        },
+      }),
     });
 
     const { output: fragmentTitleOutput } = await fragmentTitleGenerator.run(
